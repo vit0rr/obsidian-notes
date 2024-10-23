@@ -1,0 +1,176 @@
+{
+  "main": {
+    "id": "fcae7d9e88631448",
+    "type": "split",
+    "children": [
+      {
+        "id": "b155b2b9b2c4cb9c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a8f3487cb5c6c3e7",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Compiler/Writing a Compiler in Go/Starting with bytes.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Starting with bytes"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2107e9f05e6d0e63",
+    "type": "split",
+    "children": [
+      {
+        "id": "ceb2afab362c1874",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "697d2bead36a97b7",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "9ed4b99da9556120",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "fb3897e6155ed11d",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "644e68fe61c6fbc7",
+    "type": "split",
+    "children": [
+      {
+        "id": "95f9ea1abcfffd2d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "2c3282fc67a1759f",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Compiler/Writing a Compiler in Go/Starting with bytes.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Starting with bytes"
+            }
+          },
+          {
+            "id": "5b5e4c9758a71cc6",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Compiler/Writing a Compiler in Go/Starting with bytes.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Starting with bytes"
+            }
+          },
+          {
+            "id": "a19a50d0899a9536",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "95e83985e7feb8b7",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Compiler/Writing a Compiler in Go/Starting with bytes.md"
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Starting with bytes"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "697d2bead36a97b7",
+  "lastOpenFiles": [
+    "Compiler/Writing a Compiler in Go/pics",
+    "Untitled",
+    "Compiler/Writing a Compiler in Go/pics/starting-with-bytes.png",
+    "Compiler/Writing a Compiler in Go/Starting with bytes.md",
+    "Compiler/Writing a Compiler in Go",
+    "Compiler",
+    "Untitled.canvas",
+    "2024-10-23.md"
+  ]
+}
