@@ -199,4 +199,6 @@ The first thing I'm doing here is to find out how long the resulting instruction
 
 As soon as we have the final value of `instructionLen` , we allocate the instruction `[]byte` and add the `Opcode` as its first byte - by casting it into one. Then comes the tricky part: I'm iterate over the defined `OperandsWidths`, take the matching element from `operands`and put it in the instructions. I do that by using a `switch` statement with a different method for each operand, depending on how wide the operand is.
 
-I'll need to extend this `switch` as I define additional `Opcodes`. For now, I only make sure that a two-byte operand is encoded in big endian. After encoding the operand, I increment `offset` by its `width`and the next iteration of the loop. Since the `OpConstant`opcode in the test case has only one operand, the loop performs only one iteration before `Make` returns `instruction`
+I'll need to extend this `switch` as I define additional `Opcodes`. For now, I only make sure that a two-byte operand is encoded in big endian. After encoding the operand, I increment `offset` by its `width`and the next iteration of the loop. Since the `OpConstant`opcode in the test case has only one operand, the loop performs only one iteration before `Make` returns `instruction`.
+
+And that's it! I created my first bytecode instruction!
