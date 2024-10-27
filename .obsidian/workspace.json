@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Compiler/Machine Code for Beginners/What is machine code?.md",
+                "file": "Compiler/Machine Code for Beginners/2- Getting to know your computer.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "What is machine code?"
+              "title": "2- Getting to know your computer"
             }
           }
         ],
@@ -179,12 +179,13 @@
   },
   "active": "697d2bead36a97b7",
   "lastOpenFiles": [
+    "Compiler/Machine Code for Beginners/1- What is machine code?.md",
+    "Compiler/Machine Code for Beginners/2- Getting to know your computer.md",
     "Compiler/Machine Code for Beginners/pics/assembly-example.png",
     "Compiler/Machine Code for Beginners/pics/assembly-example.png",
     "Compiler/Machine Code for Beginners/pics",
     "Compiler/Machine Code for Beginners/pics/4-interpreter-image.png",
     "Compiler/Writing a Compiler in Go/3- Bytecode, disassemble.md",
-    "Compiler/Machine Code for Beginners/What is machine code?.md",
     "Compiler/Machine Code for Beginners",
     "Compiler/Writing a Compiler in Go/2- The Smallest Compiler.md",
     "Compiler/Writing a Compiler in Go/pics/the-smallest-compiler.png",

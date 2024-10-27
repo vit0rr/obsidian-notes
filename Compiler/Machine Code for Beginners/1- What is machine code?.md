@@ -16,3 +16,5 @@ In Assembly Language each instruction to the computer is represented by a mnemon
 Left, is a part of a machine code program in hex. The hex numbers system has sixteen digits and uses the symbol 0-9 and A-F to represent the numbers 0 to 15. The hex number at the beginning of each line of the program is an instruction (3E).
 
 On right, is the same program but in assembly language. The mnemonic LD A (load A), means the same as hex number 3E. In both these programs, each line contains an instruction which is the equivalent of a single instruction in the computer's own code.
+
+**Assembler** is a program which translate the mnemonics into the computer's code. And, there's also a program called **hex loader** to do the same, but for hex.
