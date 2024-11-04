@@ -194,3 +194,215 @@ And on main:
 ```
 
 That means I can move on and safely do more arithmetic on the stack without the stack slowly blowing up in my face.
+
+### Infix Expressions
+To remember, Monkey supports eight (8) infix operators and four (4) of them are being used for arithmetic: **+**, **-**, `*`, and **/**. I've already added support for **+** with the **OpAdd** opcode. Now I need to add three more. And since all three of them work the same way in regards to their use of operands and the stack, I'll add them together.
+
+Let's add the **Opcode** definitions to the **code** package:
+```go
+// code/code.go
+const (
+	OpConstant Opcode = iota
+	OpPop
+	OpAdd
+	OpSub
+	OpMul
+	OpDiv
+)
+
+var definitions = map[Opcode]*Definition{
+	OpConstant: {"OpConstant", []int{2}},
+	OpPop:      {"OpPop", []int{}},
+	OpAdd:      {"OpAdd", []int{}},
+	OpSub:      {"OpSub", []int{}},
+	OpMul:      {"OpMul", []int{}},
+	OpDiv:      {"OpDiv", []int{}},
+}
+```
+
+It's kind of obvious, but **OpSub** stands for the **-**, **OpMul** for the `*`, and **OpDiv** for the **/** infix operator. With these opcodes defined, I can use them in my compiler tests to make sure the compiler knows how to output them:
+```go
+// compiler/compiler_test.go
+func TestIntegerArithmetic(t *testing.T) {
+        // [...]
+		{
+			input:             "1 - 2",
+			expectedConstants: []interface{}{1, 2},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpSub),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "1 * 2",
+			expectedConstants: []interface{}{1, 2},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpMul),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "2 / 1",
+			expectedConstants: []interface{}{2, 1},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpDiv),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+```
+
+The only thing different here is the last test case, where I changed the order of the operands. The rest, are pretty similar. The test ofc not pass. I need to teach the compiler how to read these infix expression on switch statement:
+
+```go
+// compiler/compiler.go
+func (c *Compiler) Compile(node ast.Node) error {
+    // [...] 
+
+	case *ast.InfixExpression:
+		err := c.Compile(node.Left)
+		if err != nil {
+			return err
+		}
+
+		err = c.Compile(node.Right)
+		if err != nil {
+			return err
+		}
+
+		switch node.Operator {
+		case "+":
+			c.emit(code.OpAdd)
+		case "-":
+			c.emit(code.OpSub)
+		case "*":
+			c.emit(code.OpMul)
+		case "/": 
+			c.emit(code.OpDiv)
+		default:
+			return fmt.Errorf("unknow operador %s", node.Operator)
+		}
+
+	case *ast.IntegerLiteral:
+		integer := &object.Integer{Value: node.Value}
+		c.emit(code.OpConstant, c.addConstant(integer))
+	}
+
+	return nil
+}
+```
+
+And they make the tests pass:
+```shell
+go test ./compiler
+ok      github.com/vit0rr/mumu/compiler 0.471s
+```
+
+It means that now the compiler outputs three more opcodes. The VM must now step up to this challenge. 
+```go
+// vm/vm_test.go
+func TestIntegerArithmetic(t *testing.T) {
+	tests := []vmTestCase{
+		{"1", 1},
+		{"2", 2},
+		{"1 + 2", 3},
+		{"1 - 2", -1},
+		{"1 * 2", 2},
+		{"4 / 2", 2},
+		{"50 / 2 * 2 + 10 - 2", 55},
+		{"5 + 5 + 5 + 5 - 10", 10},
+		{"2 * 2 * 2 * 2 * 2", 32},
+		{"5 * 2 + 10", 20},
+		{"5 + 2 * 10", 25},
+		{"5 * (2 + 10)", 60},
+	}
+
+	runVmTests(t, tests)
+}
+```
+
+I not only have three test cases necessary to make sure the **OpSub, OpMul** and **OpDiv** opcodes are recognized by the VM, but there's also a series of tests cases that mix the infix operators, playing with their varying levels of precedence and manipulating them by hand with added parentheses. They all fail for now. But the required changes to make all of them pass are minimal:
+```go
+// vm/vm.go
+func (vm *VM) Run() error {
+    // [...]
+
+		case code.OpAdd, code.OpSub, code.OpMul, code.OpDiv:
+			err := vm.executeBinaryOperation(op)
+			if err != nil {
+				return err
+			}
+
+		case code.OpPop:
+			vm.pop()
+		}
+	}
+
+	return nil
+}
+```
+
+```go
+// vm/vm.go
+func (vm *VM) executeBinaryOperation(op code.Opcode) error {
+	right := vm.pop()
+	left := vm.pop()
+
+	leftType := left.Type()
+	rightType := right.Type()
+
+	if leftType == object.INTEGER_OBJ && rightType == object.INTEGER_OBJ {
+		return vm.executeBinaryIntegerOperation(op, left, right)
+	}
+
+	return fmt.Errorf("unsupported types for binary operation: %s %s", leftType, rightType)
+}
+```
+
+It doesn't do much more than type assertions and possily producing an error and delegates most of the work to **executeBinaryIntegerOperation**:
+
+```go
+func (vm *VM) executeBinaryIntegerOperation(
+	op code.Opcode,
+	left, right object.Object,
+) error {
+	leftValue := left.(*object.Integer).Value
+	rightValue := right.(*object.Integer).Value
+
+	var result int64
+
+	switch op {
+	case code.OpAdd:
+		result = leftValue + rightValue
+
+	case code.OpSub:
+		result = leftValue - rightValue
+
+	case code.OpMul:
+		result = leftValue * rightValue
+
+	case code.OpDiv:
+		result = leftValue / rightValue
+
+	default:
+		return fmt.Errorf("unknow integer operator: %d", op)
+	}
+
+	return vm.push(&object.Integer{Value: result})
+}
+```
+
+Here is where I finally unwrap the integers contained in the left and right operands and produce a result according to the **op**. There shouldn't be any surprises here, because this method has a really similar counterpart in the **evaluator** package I built in the first book.
+
+And now, the test pass.
+
+Addition, subtraction, multiplication, division - they all work. As a single operations, combined, grouped by parentheses; all I do is pop operands off the stack and push the result back. Stack arithmetic. 
