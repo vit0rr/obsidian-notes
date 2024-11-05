@@ -406,3 +406,231 @@ Here is where I finally unwrap the integers contained in the left and right oper
 And now, the test pass.
 
 Addition, subtraction, multiplication, division - they all work. As a single operations, combined, grouped by parentheses; all I do is pop operands off the stack and push the result back. Stack arithmetic. 
+
+### Booleans
+Of course, Monkey has more than four operators I added. There are also the comparison operators `==`, `!=`, `>`, `<` and the two prefix operators `!` and `-`. And without booleans I couldn't represent the results of these operators (well, except for the **-** prefix), but booleans also exist as literal expressions in Monkey: `true;`, `false;`.
+I'll start by adding support for these two literals. That way I already have boolean data type in place when I add the operators.
+
+In my **evaluator**, a boolean literal evaluates to the boolean value it designates: true or false. Now, I'm working with a compiler and a VM, so I have to adjust my expectations a little bit. Instead of boolean literals *evaluating* to boolean value, I now want them to cause the VM to load the boolean values on to the stack.
+That's pretty close to what integer literals do ant those are compiled to **OpConstant** instructions. I ***could*** treat `true` and `false` as constants too, but that would be a waste, not only of bytecode but also of compiler and VM resources. Instead, I'll not define two new opcodes that directly tell the VM to push an `*oject.Boolean` on to the stack:
+
+```go
+// code/code.go
+
+const (
+	// [...]
+	OpTrue
+	OpFalse
+)
+
+var definitions = map[Opcode]*Definition{
+	// [...]
+	OpTrue:     {"OpTrue", []int{}},
+	OpFalse:    {"OpFalse", []int{}},
+}
+```
+
+Both opcodes have no operands, and simply tell the VM "push true or false on to the stack". With this, I can now use that to create a compiler test in which I make sure that the boolean literals **true** and **false** are translated to **OpTrue** and **OpFalse** instructions:
+
+```go
+// compiler/compiler_test.go
+
+func TestBooleanExpressions(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			input:             "true",
+			expectedConstants: []interface{}{},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpTrue),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "false",
+			expectedConstants: []interface{}{},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpFalse),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+```
+
+```shell
+go test ./compiler 
+--- FAIL: TestBooleanExpressions (0.00s)
+    compiler_test.go:165: testInstructions failed: _wrong instructions length.
+        want="0000 OpTrue\n0001 OpPop\n"
+        got="0000 OpPop\n"
+FAIL
+FAIL    github.com/vit0rr/mumu/compiler 0.536s
+FAIL
+```
+
+It fails because the compiler only knows that it should emit an **OpPop** after expression statements. So, in order to emit **OpTrue** or **OpFalse** instructions I need to add a new **case** branch for `*ast.Boolean` to the compiler's **Compile** method:
+
+```go
+// compiler/compiler.go
+
+func (c *Compiler) Compile(node ast.Node) error {
+	switch node := node.(type) {
+	// [...]
+
+	case *ast.Boolean:
+		if node.Value {
+			c.emit(code.OpTrue)
+		} else {
+			c.emit(code.OpFalse)
+		}
+
+	// [...]
+}
+```
+
+And now, test pass:
+```shell
+➜ go test ./compiler
+ok      github.com/vit0rr/mumu/compiler 0.480s
+```
+
+Now, I need to tell the VM about **true** and **false**. And just like in the **compiler** package I now create a second test function:
+
+```go
+// vm/vm_test.go
+
+func TestBooleanExpressions(t *testing.T) {
+	tests := []vmTestCase{
+		{"true", true},
+		{"false", false},
+	}
+
+	runVmTests(t, tests)
+}
+```
+
+Pretty similar to the `TestIntegerArithmetic`. But for booleans, I now need to create a new branch for booleans to `testExpectedObject` helper, and create a new `testBooleanObject` helper:
+
+```go
+// vm/vm_test.go
+
+func testBooleanObject(expected bool, actual object.Object) error {
+	result, ok := actual.(*object.Boolean)
+	if !ok {
+		return fmt.Errorf("object is not Boolean. got=%T (%+v)", actual, actual)
+	}
+
+	if result.Value != expected {
+		return fmt.Errorf("object has wrong value. got=%t, want=%t",
+			result.Value, expected)
+	}
+
+	return nil
+}
+
+func testExpectedObject(
+	t *testing.T,
+	expected interface{},
+	actual object.Object,
+) {
+	t.Helper()
+
+	switch expected := expected.(type) {
+	case int:
+		err := testIntegerObject(int64(expected), actual)
+		if err != nil {
+			t.Errorf("testIntegerObject failed: %s", err)
+		}
+
+	case bool:
+		err := testBooleanObject(bool(expected), actual)
+		if err != nil {
+			t.Errorf("testBooleanObject failed: %s", err)
+		}
+	}
+}
+```
+
+And... No, the tests not pass with this:
+```shell
+go test ./vm      
+--- FAIL: TestBooleanExpressions (0.00s)
+panic: runtime error: index out of range [-1] [recovered]
+        panic: runtime error: index out of range [-1]
+
+goroutine 22 [running]:
+testing.tRunner.func1.2({0x100ea8b40, 0x140000b2018})
+        /opt/homebrew/Cellar/go/1.23.2/libexec/src/testing/testing.go:1632 +0x1bc
+testing.tRunner.func1()
+        /opt/homebrew/Cellar/go/1.23.2/libexec/src/testing/testing.go:1635 +0x334
+panic({0x100ea8b40?, 0x140000b2018?})
+        /opt/homebrew/Cellar/go/1.23.2/libexec/src/runtime/panic.go:785 +0x124
+github.com/vit0rr/mumu/vm.(*VM).pop(...)
+        /Users/vitorsouza/Desktop/dev/mumu/vm/vm.go:122
+github.com/vit0rr/mumu/vm.(*VM).Run(0x140000e5e28)
+        /Users/vitorsouza/Desktop/dev/mumu/vm/vm.go:60 +0x1c0
+github.com/vit0rr/mumu/vm.runVmTests(0x140000f11e0, {0x140000edf18, 0x2, 0x2?})
+        /Users/vitorsouza/Desktop/dev/mumu/vm/vm_test.go:66 +0x29c
+github.com/vit0rr/mumu/vm.TestBooleanExpressions(0x140000f11e0?)
+        /Users/vitorsouza/Desktop/dev/mumu/vm/vm_test.go:124 +0x88
+testing.tRunner(0x140000f11e0, 0x100eb6740)
+        /opt/homebrew/Cellar/go/1.23.2/libexec/src/testing/testing.go:1690 +0xe4
+created by testing.(*T).Run in goroutine 1
+        /opt/homebrew/Cellar/go/1.23.2/libexec/src/testing/testing.go:1743 +0x314
+FAIL    github.com/vit0rr/mumu/vm       0.512s
+FAIL
+```
+
+it blows because I'm issue an **OpPop** after every expression statement to keep the stack clean. And when I try to pop something off the stack without first putting something on it, I get an index out of range panic.
+The first step towards fixing this is to tell the VM about **true** and **false** and defining global **True** and **False** instances of them:
+
+```go
+// vm/vm.go
+
+var True = &object.Boolean{Value: true}
+var False = &object.Boolean{Value: false}
+```
+
+The reason for reusing global instances of the object.Boolean are the same as in my evaluator. That's just no-brainer in terms of perrmance because true will always be true. And it's easier makes comparisons, like `true == true`, I can just compare two pointers without having to unwrap the value they're pointing at.
+
+Now, I need to push them on to the stack when instructed to do so:
+
+
+
+```go
+// vm/vm.go
+
+func (vm *VM) Run() error {
+	for ip := 0; ip < len(vm.instructions); ip++ {
+		op := code.Opcode(vm.instructions[ip])
+
+		// [...]
+
+		case code.OpTrue:
+			err := vm.push(True)
+			if err != nil {
+				return err
+			}
+
+		case code.OpFalse:
+			err := vm.push(False)
+			if err != nil {
+				return err
+			}
+
+		// [...]
+	}
+
+	return nil
+}
+```
+
+Nothing fancy here. Push the globals `True` and `False` on to the stack. That means that I'm actually pushing something on to the stack before trying to clean it up again, which means my tests don't blow up anymore:
+
+
+```shell
+➜ go test ./vm
+ok      github.com/vit0rr/mumu/vm       0.504s
+```
