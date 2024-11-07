@@ -634,3 +634,395 @@ Nothing fancy here. Push the globals `True` and `False` on to the stack. That me
 ➜ go test ./vm
 ok      github.com/vit0rr/mumu/vm       0.504s
 ```
+
+### Comparison operators
+The four comparison operators in Monkey are: `==`, `!=`, `>` and `<`. I will now add support for all four of them by adding three new opcode definitions and supporting them in the compiler and the VM. Here they are:
+
+```go
+// code/code.go
+
+const (
+	OpConstant Opcode = iota
+	OpPop
+	OpAdd
+	OpSub
+	OpMul
+	OpDiv
+	OpTrue
+	OpFalse
+	OpEqual
+	OpNotEqual
+	OpGreaterThan
+)
+
+var definitions = map[Opcode]*Definition{
+	OpConstant:    {"OpConstant", []int{2}},
+	OpPop:         {"OpPop", []int{}},
+	OpAdd:         {"OpAdd", []int{}},
+	OpSub:         {"OpSub", []int{}},
+	OpMul:         {"OpMul", []int{}},
+	OpDiv:         {"OpDiv", []int{}},
+	OpTrue:        {"OpTrue", []int{}},
+	OpFalse:       {"OpFalse", []int{}},
+	OpEqual:       {"OpEqual", []int{}},
+	OpNotEqual:    {"OpNotEqual", []int{}},
+	OpGreaterThan: {"OpGreaterThan", []int{}},
+}
+```
+
+No operands because they do the work by comparing the two topmost elements on the stack. They tell the VM to pop them off and push the result back on. Just like opcodes for arithmetic operations.
+
+And yes, theres is no `OpLessThan`. 
+That's because with compilation it's possible to do a thing that are not possible with interpretation: reordering of code.
+
+The expression `3 < 5` can be reordered to `5 > 3` without changing its result. And because it can be reordered, that's what my compiler is going to do. It will take every less-than expression, and reorder it to emit the greater-than version instead. Instructions set small, loop of my VM tighter and ofc learn the things I can do with compilation.
+
+Let's write some tests:
+```go
+// compiler/compiler_test.go
+
+func TestBooleanExpressions(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			input:             "true",
+			expectedConstants: []interface{}{},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpTrue),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "false",
+			expectedConstants: []interface{}{},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpFalse),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "1 > 2",
+			expectedConstants: []interface{}{1, 2},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpGreaterThan),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "1 < 2",
+			expectedConstants: []interface{}{2, 1},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpGreaterThan),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "1 == 2",
+			expectedConstants: []interface{}{1, 2},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpEqual),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "1 != 2",
+			expectedConstants: []interface{}{1, 2},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpNotEqual),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "true == false",
+			expectedConstants: []interface{}{},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpTrue),
+				code.Make(code.OpFalse),
+				code.Make(code.OpEqual),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "true != false",
+			expectedConstants: []interface{}{},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpTrue),
+				code.Make(code.OpFalse),
+				code.Make(code.OpNotEqual),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+```
+
+Of course it fails.
+What I want from my compiler is to emit two instructions to get the operands of the infix operators on to the stack and then one instruction with the correct comparison opcode. 
+
+I need to extend the `*ast.InfixExpression` branch in my **Compile** method, where I already emit the other infix operator opcodes:
+
+```go
+// compiler/compiler.go
+
+func (c *Compiler) Compile(node ast.Node) error {
+	switch node := node.(type) {
+	case *ast.Program:
+		for _, s := range node.Statements {
+			err := c.Compile(s)
+			if err != nil {
+				return err
+			}
+		}
+
+	case *ast.Boolean:
+		if node.Value {
+			c.emit(code.OpTrue)
+		} else {
+			c.emit(code.OpFalse)
+		}
+
+	case *ast.ExpressionStatement:
+		err := c.Compile(node.Expression)
+		if err != nil {
+			return err
+		}
+		c.emit(code.OpPop)
+
+	case *ast.InfixExpression:
+		err := c.Compile(node.Left)
+		if err != nil {
+			return err
+		}
+
+		err = c.Compile(node.Right)
+		if err != nil {
+			return err
+		}
+
+		switch node.Operator {
+		case "+":
+			c.emit(code.OpAdd)
+		case "-":
+			c.emit(code.OpSub)
+		case "*":
+			c.emit(code.OpMul)
+		case "/":
+			c.emit(code.OpDiv)
+		case ">":
+			c.emit(code.OpGreaterThan)
+		case "==":
+			c.emit(code.OpEqual)
+		case "!=":
+			c.emit(code.OpNotEqual)
+		default:
+			return fmt.Errorf("unknow operador %s", node.Operator)
+		}
+
+	case *ast.IntegerLiteral:
+		integer := &object.Integer{Value: node.Value}
+		c.emit(code.OpConstant, c.addConstant(integer))
+	}
+
+	return nil
+}
+```
+
+Support for `<` operators is still missing.
+
+Since this the operator for which I want to reorder the operands, its implementation is an addition right at the beginning of the **case** branch for `*ast.InfixExpression`:
+```go
+// compiler/compiler.go
+
+func (c *Compiler) Compile(node ast.Node) error {
+	switch node := node.(type) {
+	case *ast.Program:
+	// [...]
+
+	case *ast.InfixExpression:
+		if node.Operator == "<" {
+			err := c.Compile(node.Right)
+			if err != nil {
+				return err
+			}
+
+			err = c.Compile(node.Left)
+			if err != nil {
+				return err
+			}
+
+			c.emit(code.OpGreaterThan)
+			return nil
+		}
+
+		err := c.Compile(node.Left)
+		if err != nil {
+			return err
+		}
+
+		err = c.Compile(node.Right)
+		if err != nil {
+			return err
+		}
+
+		// [...]
+}
+```
+
+What I did here is to turn `<` into a special case.
+I turn the order around and first compile `node.Right` and then `node.Left` in case the operator is `<`. After that I emit **OpGraterThan** opcode. I changed a less-than comparison into a grater-than comparison - while compiling. And it is working:
+```shell
+go test ./compiler                              
+ok      github.com/vit0rr/mumu/compiler 0.488s
+```
+
+But I'm not done yet.
+The goal is that it looks to VM as if there is not such thing as a `<` operator. All the VM should worry about are **OpGreaterThan** instructions. And now that we are sure my compiler only emits those, I can turn to my VM tests:
+```go
+// vm/vm_test.go
+
+func TestBooleanExpressions(t *testing.T) {
+	tests := []vmTestCase{
+		{"true", true},
+		{"false", false},
+		{"1 < 2", true},
+		{"1 > 2", false},
+		{"1 < 1", false},
+		{"1 > 1", false},
+		{"1 == 1", true},
+		{"1 != 1", false},
+		{"1 == 2", false},
+		{"1 != 2", true},
+		{"true == true", true},
+		{"false == false", true},
+		{"true == false", false},
+		{"true != false", true},
+		{"false != true", true},
+		{"(1 < 2) == true", true},
+		{"(1 < 2) == false", false},
+		{"(1 > 2) == true", false},
+		{"(1 > 2) == false", true},
+	}
+
+	runVmTests(t, tests)
+}
+```
+
+And it does not pass.
+```shell
+go test ./vm      
+--- FAIL: TestBooleanExpressions (0.00s)
+    vm_test.go:141: testBooleanObject failed: object is not Boolean. got=*object.Integer (&{Value:1})
+    vm_test.go:141: testBooleanObject failed: object is not Boolean. got=*object.Integer (&{Value:2})
+    vm_test.go:141: testBooleanObject failed: object is not Boolean. got=*object.Integer (&{Value:1})
+    vm_test.go:141: testBooleanObject failed: object is not Boolean. got=*object.Integer (&{Value:1})
+    vm_test.go:141: testBooleanObject failed: object is not Boolean. got=*object.Integer (&{Value:1})
+    vm_test.go:141: testBooleanObject failed: object is not Boolean. got=*object.Integer (&{Value:1})
+    vm_test.go:141: testBooleanObject failed: object is not Boolean. got=*object.Integer (&{Value:2})
+    vm_test.go:141: testBooleanObject failed: object is not Boolean. got=*object.Integer (&{Value:2})
+    vm_test.go:141: testBooleanObject failed: object has wrong value. got=false, want=true
+    vm_test.go:141: testBooleanObject failed: object has wrong value. got=false, want=true
+    vm_test.go:141: testBooleanObject failed: object has wrong value. got=true, want=false
+    vm_test.go:141: testBooleanObject failed: object has wrong value. got=false, want=true
+FAIL
+FAIL    github.com/vit0rr/mumu/vm       0.526s
+FAIL
+```
+
+Not that hard.
+First, I add a new case branch to my VM's Run method, so it handles the new comparison opcodes:
+```go
+// vm/vm.go
+
+func (vm *VM) Run() error {
+	for ip := 0; ip < len(vm.instructions); ip++ {
+		op := code.Opcode(vm.instructions[ip])
+
+		switch op {
+		// [...]
+
+		case code.OpEqual, code.OpNotEqual, code.OpGreaterThan:
+			err := vm.executeComparison(op)
+			if err != nil {
+				return err
+			}
+
+		// [...]
+	}
+
+	return nil
+}
+```
+The `executeComparison` method looks pretty similar to the previusly added `executeBinaryOperation`:
+```go
+// vm/vm.go
+
+func (vm *VM) executeComparison(op code.Opcode) error {
+	right := vm.pop()
+	left := vm.pop()
+
+	if left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ {
+		return vm.executeIntegerComparison(op, left, right)
+	}
+
+	switch op {
+	case code.OpEqual:
+		return vm.push(nativeBoolToBooleanObject(left == right))
+	case code.OpNotEqual:
+		return vm.push(nativeBoolToBooleanObject(left != right))
+	default:
+		return fmt.Errorf("unknow operator: %d (%s %s)", op, left.Type(), right.Type())
+	}
+}
+```
+
+First I pop the two operands off the stack and check their types. IF they're both integers, I'll defer to `executeIntegerComparison`. If not, I use `nativeBoolToBooleanObject` to turn the Go bools into Monkey `*object.Booleans` and push the result back on to the stack.
+
+In other words, pop the operands off the stack, compare them, push the result ack on to the stack.
+
+Second half of that again in `executeIntegerComparison`:
+```go
+// vm/vm.go
+
+func (vm *VM) executeIntegerComparison(op code.Opcode, left, right object.Object) error {
+	leftValue := left.(*object.Integer).Value
+	rightValue := right.(*object.Integer).Value
+
+	switch op {
+	case code.OpEqual:
+		return vm.push(nativeBoolToBooleanObject(leftValue == rightValue))
+	case code.OpNotEqual:
+		return vm.push(nativeBoolToBooleanObject(leftValue != rightValue))
+	case code.OpGreaterThan:
+		return vm.push(nativeBoolToBooleanObject(leftValue > rightValue))
+	default:
+		return fmt.Errorf("unknow operator: %d", op)
+	}
+}
+```
+
+I do not need to pop off anything anymore, but can go straight to unwrapping the integer values contained in left and right. And then, again, I compare the operands and turn the resulting bool into True or False. Here is the `nativeBoolToBooleanObject` helper:
+```go
+// vm/vm.go
+
+func nativeBoolToBooleanObject(input bool) *object.Boolean {
+	if input {
+		return True
+	}
+	return False
+}
+```
+
+And... Yes, that's three new methods: `executeComparison`, `executeIntegerComparison` and `nativeBoolToBooleanObject` make the tests pass:
+```shell
+go test ./vm
+ok      github.com/vit0rr/mumu/vm       0.495s
+```
