@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "37b4a854a6ecbe9f",
+        "id": "6b15a658e7a83898",
         "type": "tabs",
         "children": [
           {
-            "id": "6273fe3b9a0c6e52",
+            "id": "eac6f898dbbbee35",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -77,7 +77,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "644e68fe61c6fbc7",
@@ -162,17 +163,18 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "6273fe3b9a0c6e52",
+  "active": "eac6f898dbbbee35",
   "lastOpenFiles": [
-    "Untitled.md",
+    "Compiler/Machine Code for Beginners/2- Getting to know your computer.md",
+    "How to Solve it/Part I. In the classroom.md",
+    "How to Solve it",
     "Compiler/Writing a Compiler in Go/8- Compiling expressions.md",
+    "Articles/Thinking about JavaScript exceptions.md",
     "Compiler/Writing a Compiler in Go/1- Starting with bytes.md",
     "Articles/Introduction to Machine Code.md",
     "Compiler/Machine Code for Beginners/1- What is machine code?.md",
     "Compiler/Writing a Compiler in Go/2- The Smallest Compiler.md",
-    "Compiler/Machine Code for Beginners/2- Getting to know your computer.md",
     "Compiler/Writing a Compiler in Go/3- Bytecode, disassemble.md",
-    "Untitled",
     "Articles",
     "Untitled.canvas",
     "Compiler/Writing a Compiler in Go/7- Hooking up the REPL.md",

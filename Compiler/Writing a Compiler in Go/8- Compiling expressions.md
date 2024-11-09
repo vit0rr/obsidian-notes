@@ -1026,3 +1026,261 @@ And... Yes, that's three new methods: `executeComparison`, `executeIntegerCompar
 go test ./vm
 ok      github.com/vit0rr/mumu/vm       0.495s
 ```
+
+### Prefix expressions
+There's two prefix operators in Monkey: **-** and **!**. 
+The first negates integers and the second one booleans.
+
+Add support for them are similar to what I already did. Define the necessary opcodes, emit them in the compiler and handle them in the VM. But the difference is that this time I have to do even less, because the prefix operators only have one operand on the stack, instead of two.
+
+```go
+// code/code.go
+
+const (
+	OpConstant Opcode = iota
+	OpPop
+	OpAdd
+	OpSub
+	OpMul
+	OpDiv
+	OpTrue
+	OpFalse
+	OpEqual
+	OpNotEqual
+	OpGreaterThan
+	OpOr
+	OpMinus
+	OpBang
+)
+
+var definitions = map[Opcode]*Definition{
+	OpConstant:    {"OpConstant", []int{2}},
+	OpPop:         {"OpPop", []int{}},
+	OpAdd:         {"OpAdd", []int{}},
+	OpSub:         {"OpSub", []int{}},
+	OpMul:         {"OpMul", []int{}},
+	OpDiv:         {"OpDiv", []int{}},
+	OpTrue:        {"OpTrue", []int{}},
+	OpFalse:       {"OpFalse", []int{}},
+	OpEqual:       {"OpEqual", []int{}},
+	OpNotEqual:    {"OpNotEqual", []int{}},
+	OpGreaterThan: {"OpGreaterThan", []int{}},
+	OpOr:          {"OpOr", []int{}},
+	OpMinus:       {"OpMinus", []int{}},
+	OpBang:        {"OpBang", []int{}},
+}
+
+```
+
+Now, I need to emit them in the compiler. And as usual, tests.
+```go
+// compiler/compiler_test.go
+
+func TestIntegerArithmetic(t *testing.T) {
+	tests := []compilerTestCase{
+		// [...]
+		{
+			input:             "-1",
+			expectedConstants: []interface{}{1},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpMinus),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+```
+
+```go
+// compiler/compiler_test.go
+
+func TestBooleanExpressions(t *testing.T) {
+	tests := []compilerTestCase{
+		// [...]
+		{
+			input:             "!true",
+			expectedConstants: []interface{}{},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpTrue),
+				code.Make(code.OpBang),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
+```
+
+Of course test fails.
+The error tell that I'm missing two instructions. One to load the operand (OpConstant or OpTrue) and one for the prefix operator (OpMinus or OpBang).
+
+But I already know how to turn integer literals into OpConstant instructions and also how to emit OpTrue (and OpFalse for that matter). But that's not happening in the TestIntegerArithmetic test. There is no OpConstant and no OpTrue in the output...
+
+If I tale a closer look at the compiler, the cause is easy to spot: in the `Compile` method, I don't handle `*ast.PrefixExpression` nodes yet, I skip over them and that means I never compile the integer and oolean literals. Here's what I need to change:
+
+```go
+// compiler/compiler.go
+
+func (c *Compiler) Compile(node ast.Node) error {
+	switch node := node.(type) {
+	
+	// [...]
+
+	case *ast.PrefixExpression:
+		err := c.Compile(node.Right)
+		if err != nil {
+			return err
+		}
+
+		switch node.Operator {
+		case "!":
+			c.emit(code.OpBang)
+		case "-":
+			c.emit(code.OpMinus)
+		default:
+			return fmt.Errorf("unknow operator %s", node.Operator)
+		}
+
+		// [...]
+
+	case *ast.IntegerLiteral:
+		integer := &object.Integer{Value: node.Value}
+		c.emit(code.OpConstant, c.addConstant(integer))
+	}
+
+	return nil
+}
+```
+
+With that I walk the AST down one level further and first compile the `node.Right` branch of the `*ast.PrefixExpression` node. That result in the operand of the expression being compiled to either an `OpTrue` or an `OpConstant` instruction. To emit the opcode for the operator itself, I've used the switch statement and either generate a OpBang or a OpMinus instruction, depending on the `node.Operator` at hand.
+```shell
+go test ./compiler      
+ok      github.com/vit0rr/mumu/compiler 0.612s
+```
+
+Now, I need to handle it on the VM side.
+
+```go
+// vm/vm_test.go
+
+func TestIntegerArithmetic(t *testing.T) {
+	tests := []vmTestCase{
+		{"1", 1},
+		{"2", 2},
+		{"1 + 2", 3},
+		{"1 - 2", -1},
+		{"1 * 2", 2},
+		{"4 / 2", 2},
+		{"50 / 2 * 2 + 10 - 5", 55},
+		{"5 + 5 + 5 + 5 - 10", 10},
+		{"2 * 2 * 2 * 2 * 2", 32},
+		{"5 * 2 + 10", 20},
+		{"5 + 2 * 10", 25},
+		{"5 * (2 + 10)", 60},
+		{"-5", -5},
+		{"-10", -10},
+		{"-50 + 100 + -50", 0},
+		{"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
+	}
+
+	runVmTests(t, tests)
+}
+
+func TestBooleanExpressions(t *testing.T) {
+	tests := []vmTestCase{
+		{"true", true},
+		{"false", false},
+		{"1 < 2", true},
+		{"1 > 2", false},
+		{"1 < 1", false},
+		{"1 > 1", false},
+		{"1 == 1", true},
+		{"1 != 1", false},
+		{"1 == 2", false},
+		{"1 != 2", true},
+		{"true == true", true},
+		{"false == false", true},
+		{"true == false", false},
+		{"true != false", true},
+		{"false != true", true},
+		{"(1 < 2) == true", true},
+		{"(1 < 2) == false", false},
+		{"(1 > 2) == true", false},
+		{"(1 > 2) == false", true},
+		{"(1 > 2) || false", false},
+		{"!true", false},
+		{"!false", true},
+		{"!5", false},
+		{"!!true", true},
+		{"!!false", false},
+		{"!!5", true},
+	}
+
+	runVmTests(t, tests)
+}
+```
+
+```go
+// vm/vm.go
+
+func (vm *VM) Run() error {
+	for ip := 0; ip < len(vm.instructions); ip++ {
+		op := code.Opcode(vm.instructions[ip])
+
+		// [...]
+
+		case code.OpBang:
+			err := vm.executeBangOperator()
+			if err != nil {
+				return err
+			}
+
+		case code.OpMinus:
+			err := vm.executeMinusOperator()
+			if err != nil {
+				return err
+			}
+
+		case code.OpPop:
+			vm.pop()
+		}
+	}
+
+	return nil
+}
+
+func (vm *VM) executeMinusOperator() error {
+	operand := vm.pop()
+
+	if operand.Type() != object.INTEGER_OBJ {
+		return fmt.Errorf("unsupported type for negation: %s", operand.Type())
+	}
+
+	value := operand.(*object.Integer).Value
+	return vm.push(&object.Integer{Value: -value})
+}
+
+func (vm *VM) executeBangOperator() error {
+	operand := vm.pop()
+
+	switch operand {
+	case True:
+		return vm.push(False)
+	case False:
+		return vm.push(True)
+	default:
+		return vm.push(False)
+	}
+}
+```
+
+And now, the tests pass:
+```shell
+go test ./vm      
+ok      github.com/vit0rr/mumu/vm       0.509s
+```
+
