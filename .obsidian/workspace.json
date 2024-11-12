@@ -4,24 +4,39 @@
     "type": "split",
     "children": [
       {
-        "id": "6b15a658e7a83898",
+        "id": "3563d63140e86745",
         "type": "tabs",
         "children": [
           {
-            "id": "eac6f898dbbbee35",
+            "id": "e3ceadbd0d234642",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Compiler/Writing a Compiler in Go/8- Compiling expressions.md",
+                "file": "Books/Compiler/Writing a Compiler in Go/9- Conditionals.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "8- Compiling expressions"
+              "title": "9- Conditionals"
+            }
+          },
+          {
+            "id": "37fc83f64a208ad2",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Books/Algorithms/Introduction to the Design and Analysis of Algorithms/1- Introduction.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "1- Introduction"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -77,8 +92,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "644e68fe61c6fbc7",
@@ -163,35 +177,41 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "eac6f898dbbbee35",
+  "active": "37fc83f64a208ad2",
   "lastOpenFiles": [
-    "Compiler/Machine Code for Beginners/2- Getting to know your computer.md",
+    "Books/Algorithms/Introduction to the Design and Analysis of Algorithms/pics/algorithm.png",
+    "Books/Algorithms/Introduction to the Design and Analysis of Algorithms/1- Introduction.md",
+    "Books/Algorithms/Introduction to the Design and Analysis of Algorithms/pics",
+    "Books/Algorithms/Introduction to the Design and Analysis of Algorithms",
+    "Books/Compiler/Writing a Compiler in Go/9- Conditionals.md",
+    "Books/Algorithms",
+    "Books",
+    "Books/Compiler/Writing a Compiler in Go/8- Compiling expressions.md",
+    "Books/Compiler/Machine Code for Beginners/2- Getting to know your computer.md",
     "How to Solve it/Part I. In the classroom.md",
     "How to Solve it",
-    "Compiler/Writing a Compiler in Go/8- Compiling expressions.md",
     "Articles/Thinking about JavaScript exceptions.md",
-    "Compiler/Writing a Compiler in Go/1- Starting with bytes.md",
+    "Books/Compiler/Writing a Compiler in Go/1- Starting with bytes.md",
     "Articles/Introduction to Machine Code.md",
-    "Compiler/Machine Code for Beginners/1- What is machine code?.md",
-    "Compiler/Writing a Compiler in Go/2- The Smallest Compiler.md",
-    "Compiler/Writing a Compiler in Go/3- Bytecode, disassemble.md",
+    "Books/Compiler/Machine Code for Beginners/1- What is machine code?.md",
+    "Books/Compiler/Writing a Compiler in Go/2- The Smallest Compiler.md",
+    "Books/Compiler/Writing a Compiler in Go/3- Bytecode, disassemble.md",
     "Articles",
     "Untitled.canvas",
-    "Compiler/Writing a Compiler in Go/7- Hooking up the REPL.md",
-    "Compiler/Writing a Compiler in Go/6- Adding on the stack.md",
-    "Compiler/Writing a Compiler in Go/5- Powering on the machine.md",
-    "Compiler/Writing a Compiler in Go/4- Back ot the task at hand.md",
-    "Compiler/Machine Code for Beginners/pics/assembly-example.png",
-    "Compiler/Machine Code for Beginners/pics/assembly-example.png",
-    "Compiler/Machine Code for Beginners/pics",
-    "Compiler/Machine Code for Beginners/pics/4-interpreter-image.png",
-    "Compiler/Machine Code for Beginners",
-    "Compiler/Writing a Compiler in Go/pics/the-smallest-compiler.png",
+    "Books/Compiler/Writing a Compiler in Go/7- Hooking up the REPL.md",
+    "Books/Compiler/Writing a Compiler in Go/6- Adding on the stack.md",
+    "Books/Compiler/Writing a Compiler in Go/5- Powering on the machine.md",
+    "Books/Compiler/Writing a Compiler in Go/4- Back ot the task at hand.md",
+    "Books/Compiler/Machine Code for Beginners/pics/assembly-example.png",
+    "Books/Compiler/Machine Code for Beginners/pics/assembly-example.png",
+    "Books/Compiler/Machine Code for Beginners/pics",
+    "Books/Compiler/Machine Code for Beginners/pics/4-interpreter-image.png",
+    "Books/Compiler/Machine Code for Beginners",
+    "Books/Compiler/Writing a Compiler in Go/pics/the-smallest-compiler.png",
     "Compiler/Writing a Compiler in Go/Untitled.canvas",
-    "Compiler/Writing a Compiler in Go/pics",
-    "Compiler/Writing a Compiler in Go/pics/starting-with-bytes.png",
-    "Compiler/Writing a Compiler in Go",
-    "Compiler",
+    "Books/Compiler/Writing a Compiler in Go/pics",
+    "Books/Compiler/Writing a Compiler in Go/pics/starting-with-bytes.png",
+    "Books/Compiler/Writing a Compiler in Go",
     "2024-10-23.md"
   ]
 }
