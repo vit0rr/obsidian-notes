@@ -179,6 +179,10 @@
   },
   "active": "37fc83f64a208ad2",
   "lastOpenFiles": [
+    "scripts/update_readme.js",
+    "scripts",
+    "out",
+    "README.md",
     "Books/Algorithms/Introduction to the Design and Analysis of Algorithms/pics/algorithm.png",
     "Books/Algorithms/Introduction to the Design and Analysis of Algorithms/1- Introduction.md",
     "Books/Algorithms/Introduction to the Design and Analysis of Algorithms/pics",
@@ -209,9 +213,7 @@
     "Books/Compiler/Machine Code for Beginners",
     "Books/Compiler/Writing a Compiler in Go/pics/the-smallest-compiler.png",
     "Compiler/Writing a Compiler in Go/Untitled.canvas",
-    "Books/Compiler/Writing a Compiler in Go/pics",
     "Books/Compiler/Writing a Compiler in Go/pics/starting-with-bytes.png",
-    "Books/Compiler/Writing a Compiler in Go",
     "2024-10-23.md"
   ]
 }
